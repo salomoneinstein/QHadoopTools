@@ -1,0 +1,8 @@
+<!DOCTYPE RCC>
+<RCC>
+    <qresource prefix="/plugins/Hadoop_Tools/icons" >
+        <file alias="hdfsToLocal.png">hdfs_down.png</file>
+        <file alias="localToHdfs.png">hdfs_up.png</file>
+        <file alias="jsonToGeojson.png">fix_json.png</file>
+    </qresource>
+</RCC>
