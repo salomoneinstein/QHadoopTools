@@ -1,8 +1,8 @@
-[general]
+﻿[general]
 name=QHadoop Tools
 qgisMinimumVersion=3.0
 description=QGIS plugin to interact with Hadoop (HDFS) for spatial data management
-version=1.1
+version=1.2
 author=Salomón Einstein
 email=seramirezf@correo.udistrital.edu.co
 
@@ -18,7 +18,7 @@ icon=icon.png
 
 hasProcessingProvider=no
 
-changelog=Version 1.1:Fixed UI file path resolution after refactoring UI into views and dialogs, preventing FileNotFoundError during plugin loading.
+changelog=Version 1.2:Fixed UI path resolution after restructuring UI into views and dialogs; improved plugin stability.
 
 experimental=False
 deprecated=False

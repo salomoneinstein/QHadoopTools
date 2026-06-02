@@ -1,4 +1,4 @@
-# QHadoop Tools
+﻿# QHadoop Tools
 
 QHadoop Tools is a QGIS plugin that enables interaction with Hadoop (HDFS) using WebHDFS for managing spatial data.
 
@@ -70,18 +70,29 @@ Infrastructure (WebHDFS client)
 
 ---
 
-## 🔧 UI Path Resolution Fix
+## 🔄 Recent Fixes & Improvement
 
-The plugin structure was refactored to separate UI components into two layers:
+### v1.1
+
+Initial refactor introduced a separation of UI components into:
 
 - `ui/views` → Qt Designer files (.ui)
 - `ui/dialogs` → dialog logic, validation and signals
 
-### Problem
-
-After separating the UI structure, dialogs were incorrectly resolving `.ui` file paths relative to their own directory, producing errors like:
+However, UI file paths were not correctly updated, causing issues when loading dialogs.
 
 ---
+
+### v1.2
+
+The plugin UI structure was refined to correctly support the separation between views and dialogs.
+
+### ⚠️ Issue
+
+After this structural change, dialogs attempted to load `.ui` files relative to their own directory, leading to error.
+
+---
+
 
 ## 📚 Citation
 

@@ -20,9 +20,8 @@ class Controller:
         self.geojson_service = GeoJSONService()
         self.actions = []
 
-    # ------------------------
+
     # GUI INIT
-    # ------------------------
     def init_gui(self):
         self.unload()    
         
@@ -78,12 +77,12 @@ class Controller:
     # FEATURES
     # ------------------------
 
-    # ✅ COPY FROM HDFS (CON SEÑALES)
+    #COPY FROM HDFS (CON SEÑALES)
     def copy_from_hdfs(self):
 
         dialog = CopyFromHdfsDialog(self.iface.mainWindow())
 
-        # ✅ conectar señal del dialog
+        #conectar señal del dialog
         dialog.execute_copy.connect(self._execute_copy_from_hdfs)
 
         dialog.exec_()
@@ -169,7 +168,7 @@ class Controller:
             )
             
 
-    # ✅ FIX GEOJSON
+    #FIX GEOJSON
     def fix_geojson(self):
 
         dialog = FixGeoJsonDialog(self.iface.mainWindow())
@@ -205,7 +204,7 @@ class Controller:
             
 
             
-    # ✅ COPY TO HDFS
+    #COPY TO HDFS
     def copy_to_hdfs(self):
 
         dialog = CopyToHdfsDialog(self.iface.mainWindow())
@@ -230,7 +229,7 @@ class Controller:
                 user=conn_data["user"]
             )
 
-            # ✅ prueba simple: listar raíz
+            #prueba simple: listar raíz
             test_client.list("/")
 
             QMessageBox.information(

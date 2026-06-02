@@ -24,26 +24,6 @@ class QHadoopTools:
     def initGui(self):
         self.controller.init_gui()
 
-        # Fix GeoJSON
-        self.add_action(
-            icon_path=":/plugins/QHadoopTools/icons/fix_json.png",
-            text="Fix GeoJSON",
-            callback=self.controller.fix_geojson
-        )
-
-        # Upload to HDFS
-        self.add_action(
-            icon_path=":/plugins/QHadoopTools/icons/hdfs_up.png",
-            text="Upload to HDFS",
-            callback=self.controller.copy_to_hdfs
-        )
-
-        # Download from HDFS
-        self.add_action(
-            icon_path=":/plugins/QHadoopTools/icons/hdfs_down.png",
-            text="Download from HDFS",
-            callback=self.controller.copy_from_hdfs
-        )
 
     # Add menu/toolbar action
     def add_action(self, icon_path, text, callback):
