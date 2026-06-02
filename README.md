@@ -70,6 +70,19 @@ Infrastructure (WebHDFS client)
 
 ---
 
+## 🔧 UI Path Resolution Fix
+
+The plugin structure was refactored to separate UI components into two layers:
+
+- `ui/views` → Qt Designer files (.ui)
+- `ui/dialogs` → dialog logic, validation and signals
+
+### Problem
+
+After separating the UI structure, dialogs were incorrectly resolving `.ui` file paths relative to their own directory, producing errors like:
+
+---
+
 ## 📚 Citation
 
 If you use this plugin in your work:
