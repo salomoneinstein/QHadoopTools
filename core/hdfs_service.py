@@ -1,6 +1,8 @@
 import os
 from ..infrastructure.webhdfs_client import WebHDFSClient
-from ..utils.logger import logger
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class HDFSService:
@@ -19,11 +21,10 @@ class HDFSService:
             port=port,
             user=user
         )
-        
 
 
     # Upload local → HDFS
-    def upload(self, local_path: str, remote_path: str) -> None:
+    def upload(self, local_path: str, remote_path: str, progress_callback=None) -> None:
 
         if not local_path or not remote_path:
             raise ValueError("Local and remote paths are required")
@@ -31,7 +32,7 @@ class HDFSService:
         try:
             logger.info(f"{self.PREFIX} Uploading: {local_path} → {remote_path}")
 
-            self.client.put(local_path, remote_path)
+            self.client.put(local_path, remote_path,progress_callback=progress_callback)
 
             logger.info(f"{self.PREFIX} Upload completed successfully")
 
@@ -43,19 +44,17 @@ class HDFSService:
 
 
     # Download HDFS → local
-    def download(self, remote_path: str, local_path: str):
+    def download(self, remote_path: str, local_path: str, progress_callback=None):
 
-        #intentar descarga directa (archivo)
         try:
-            self.client.get(remote_path, local_path)
+            self.client.get(remote_path, local_path, progress_callback=progress_callback)
             return
         except Exception:
-            pass  # no es archivo → posiblemente carpeta
+            pass  
 
-        #listar contenido de la carpeta
+
         files = self.client.list(remote_path)
 
-        #filtrar archivos reales 
         valid_files = [
             f for f in files
             if not f.startswith(".") and not f.startswith("_")
@@ -64,21 +63,12 @@ class HDFSService:
         if not valid_files:
             raise RuntimeError("No data files found in directory")
 
-        #ordenar archivos 
         valid_files.sort()
-
-        #descargar y unir
  
         first_file = valid_files[0]
-
-        #descargar directamente
         
         remote_file = f"{remote_path.rstrip('/')}/{first_file}"
-        self.client.get(remote_file, local_path)
-
-
-
-
+        self.client.get(remote_file, local_path, progress_callback=progress_callback)
 
 
     # List HDFS directory

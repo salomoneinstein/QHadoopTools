@@ -140,8 +140,8 @@ class CopyFromHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
             if not os.path.isdir(dir_name):
                 raise ValueError("Output directory is not valid")
 
-        if not output_path_lower.endswith(".geojson"):
-            self.txtOut.setText(output_path + ".geojson")
+        if not output_path_lower.endswith(".json"):
+            self.txtOut.setText(output_path + ".json")
 
         # Protocol
         if not protocol:
@@ -157,18 +157,14 @@ class CopyFromHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
             self.validate()
             data = self.get_data()
 
-            # ✅ emitir datos al controller
             self.execute_copy.emit(data)
+            self.accept() 
 
         except ValueError as e:
             QtWidgets.QMessageBox.warning(self, "Validation Error", str(e))
 
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", str(e))
-
-    #def run_copy(self):
-    #    self.validate()
-    #    self.execute_copy.emit(self.get_data())
     
     
     def run_test(self):
@@ -180,8 +176,6 @@ class CopyFromHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if not data["user"]:
                 raise ValueError("User is required")
-
-            # ✅ emitir evento
             self.test_connection.emit(data)
 
         except Exception as e:

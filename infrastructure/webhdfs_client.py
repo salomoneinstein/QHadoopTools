@@ -3,7 +3,9 @@ import random
 from typing import Callable
 
 from ..infrastructure.webhdfs import WebHDFS
-from ..utils.logger import logger
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class WebHDFSClient:
@@ -36,9 +38,8 @@ class WebHDFSClient:
             timeout=timeout
         )
 
-    # ------------------------
+
     # Internal retry executor
-    # ------------------------
     def _execute(
         self,
         action_name: str,
@@ -60,7 +61,6 @@ class WebHDFSClient:
 
             except Exception as e:
 
-                # ❗ No reintentar errores lógicos
                 if isinstance(e, ValueError):
                     raise
 
@@ -68,45 +68,40 @@ class WebHDFSClient:
                     f"{self.PREFIX} {action_name} failed ({src} → {dst}) attempt {attempt}: {e}"
                 )
 
-                # Último intento
                 if attempt == self.retries:
                     raise RuntimeError(
                         f"{self.PREFIX} {action_name} failed after {self.retries} attempts: {e}"
                     ) from e
 
-                # Backoff exponencial + jitter
                 wait = self.delay * (2 ** (attempt - 1)) + random.uniform(0, 1)
                 time.sleep(wait)
 
-    # ------------------------
+                
     # Upload file
-    # ------------------------
-    def put(self, local_path: str, remote_path: str) -> None:
+    def put(self, local_path: str, remote_path: str, progress_callback=None) -> None:
 
         if not local_path or not remote_path:
             raise ValueError("Local and remote paths are required")
 
         def upload():
-            self.client.put_file(local_path, remote_path)
+            self.client.put_file(local_path, remote_path, progress_callback=progress_callback)
 
         self._execute("PUT", upload, local_path, remote_path)
 
-    # ------------------------
+
     # Download file
-    # ------------------------
-    def get(self, remote_path: str, local_path: str) -> None:
+    def get(self, remote_path: str, local_path: str, progress_callback=None) -> None:
 
         if not remote_path or not local_path:
             raise ValueError("Remote and local paths are required")
 
         def download():
-            self.client.get_file(remote_path, local_path)
+            self.client.get_file(remote_path, local_path, progress_callback=progress_callback)
 
         self._execute("GET", download, remote_path, local_path)
 
-    # ------------------------
+
     # List directory
-    # ------------------------
     def list(self, path: str) -> list:
 
         if not path:

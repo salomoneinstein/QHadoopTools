@@ -2,6 +2,9 @@ from qgis.PyQt.QtWidgets import QAction
 from qgis.PyQt.QtGui import QIcon
 
 from .controller import Controller
+from .utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class QHadoopTools:
@@ -16,8 +19,6 @@ class QHadoopTools:
         self.plugin_dir = ""
         self.actions = []
         self.menu = "&QHadoopTools"
-
-        self.controller = Controller(iface)
 
 
     # Initialize GUI

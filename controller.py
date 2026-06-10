@@ -1,15 +1,20 @@
 from . import resources
+from qgis.core import Qgis
+from qgis.core import QgsApplication
 from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.PyQt.QtGui import QIcon
 
 from .core.hdfs_service import HDFSService
 from .core.geojson_service import GeoJSONService
+from .tasks.hdfs_task import HDFSTask
 
 from .ui.dialogs.copy_from_hdfs_dialog import CopyFromHdfsDialog
 from .ui.dialogs.copy_to_hdfs_dialog import CopyToHdfsDialog
 from .ui.dialogs.fix_geojson_dialog import FixGeoJsonDialog
+from .utils.logger import get_logger
 
-from .utils.logger import logger
+logger = get_logger(__name__)
+
 
 
 class Controller:
@@ -19,7 +24,6 @@ class Controller:
         self.hdfs_service = HDFSService()
         self.geojson_service = GeoJSONService()
         self.actions = []
-
 
     # GUI INIT
     def init_gui(self):
@@ -45,11 +49,6 @@ class Controller:
             self.fix_geojson,
             QIcon(":/plugins/QHadoopTools/icons/jsonToGeojson.png")
         )
-        
-        
-
-
-
 
 
     def _add_action(self, name, callback, icon=None):
@@ -73,50 +72,80 @@ class Controller:
             self.iface.removePluginMenu("QHadoop Tools", action)
             self.iface.removeToolBarIcon(action)
 
-    # ------------------------
-    # FEATURES
-    # ------------------------
-
-    #COPY FROM HDFS (CON SEÑALES)
-    def copy_from_hdfs(self):
-
-        dialog = CopyFromHdfsDialog(self.iface.mainWindow())
-
-        #conectar señal del dialog
-        dialog.execute_copy.connect(self._execute_copy_from_hdfs)
-
-        dialog.exec_()
-
-
+   
     def _execute_copy_from_hdfs(self, data):
+        
+        self.iface.messageBar().pushMessage(
+            "QHadoop Tools",
+            "Processing... See Task Manager for progress",
+            level=Qgis.Info,
+            duration=3
+        )
 
-        try:
-            conn = data["connection"]
+        task = HDFSTask(
+            "Downloading from HDFS...",
+            data,
+            operation="download"
+        )
+        
+        task.setDependentLayers([])
 
-            service = HDFSService(
-                host=conn["host"],
-                port=conn["port"],
-                user=conn["user"]
-            )
-
-            service.download(
-                data["remote_path"],
-                data["local_path"]
-            )
-
-            QMessageBox.information(
+        task.taskCompleted.connect(
+            lambda: QMessageBox.information(
                 self.iface.mainWindow(),
                 "Success",
                 "File downloaded successfully"
             )
+        )
 
-        except Exception as e:
-            QMessageBox.critical(
+        task.taskTerminated.connect(
+            lambda: QMessageBox.critical(
                 self.iface.mainWindow(),
                 "Error",
-                str(e)
+                str(task.exception)
             )
+        )
 
+        QgsApplication.taskManager().addTask(task)
+
+
+    def _execute_copy_to_hdfs(self, data):
+        
+        
+        self.iface.messageBar().pushMessage(
+            "QHadoop Tools",
+            "processing... See Task Manager for progress",
+            level=Qgis.Info,
+            duration=3
+        )
+
+        task = HDFSTask(
+            "Uploading to HDFS...",
+            data,
+            operation="upload"
+        )
+        
+        task.setDependentLayers([])
+
+        task.taskCompleted.connect(
+            lambda: QMessageBox.information(
+                self.iface.mainWindow(),
+                "Success",
+                "File uploaded successfully"
+            )
+        )
+
+        task.taskTerminated.connect(
+            lambda: QMessageBox.critical(
+                self.iface.mainWindow(),
+                "Error",
+                str(task.exception)
+            )
+        )
+
+        QgsApplication.taskManager().addTask(task)
+           
+        
     def copy_from_hdfs(self):
 
         dialog = CopyFromHdfsDialog(self.iface.mainWindow())
@@ -127,84 +156,6 @@ class Controller:
         dialog.exec_()
         
 
-    def copy_to_hdfs(self):
-
-        dialog = CopyToHdfsDialog(self.iface.mainWindow())
-
-        dialog.execute_copy.connect(self._execute_copy_to_hdfs)
-        dialog.test_connection.connect(self._test_connection)
-
-        dialog.exec_()
-
-
-
-    def _execute_copy_to_hdfs(self, data):
-
-        try:
-            conn = data["connection"]
-
-            service = HDFSService(
-                host=conn["host"],
-                port=conn["port"],
-                user=conn["user"]
-            )
-
-            service.upload(
-                data["local_path"],
-                data["remote_path"]
-            )
-
-            QMessageBox.information(
-                self.iface.mainWindow(),
-                "Success",
-                "File uploaded successfully"
-            )
-
-        except Exception as e:
-            QMessageBox.critical(
-                self.iface.mainWindow(),
-                "Error",
-                str(e)
-            )
-            
-
-    #FIX GEOJSON
-    def fix_geojson(self):
-
-        dialog = FixGeoJsonDialog(self.iface.mainWindow())
-
-        dialog.execute_copy.connect(self._execute_fix_geojson)
-
-        dialog.exec_()
-
-    def _execute_fix_geojson(self, data):
-
-        try:
-            logger.info("[Controller] Fix GeoJSON")
-
-            self.geojson_service.fix(
-                data["input_path"]
-            )
-
-            QMessageBox.information(
-                self.iface.mainWindow(),
-                "Success",
-                "GeoJSON fixed successfully"
-            )
-
-        except Exception as e:
-            logger.error(f"[Controller] Fix failed: {e}")
-
-            QMessageBox.critical(
-                self.iface.mainWindow(),
-                "Error",
-                str(e)
-            )
-            
-            
-
-            
-    #COPY TO HDFS
     def copy_to_hdfs(self):
 
         dialog = CopyToHdfsDialog(self.iface.mainWindow())
@@ -215,6 +166,48 @@ class Controller:
         dialog.exec_()
         
     
+    def fix_geojson(self):
+        dialog = FixGeoJsonDialog(self.iface.mainWindow())
+        dialog.execute_fix.connect(self._execute_fix_geojson_task)
+        dialog.exec_()
+
+                                   
+    def _execute_fix_geojson_task(self, data):
+
+        data["service"] = self.geojson_service
+
+        self.iface.messageBar().pushMessage(
+            "QHadoop Tools",
+            "Processing... See Task Manager for progress",
+            level=Qgis.Info,
+            duration=3
+        )
+
+        task = HDFSTask(
+            "Fix GeoJSON",
+            data,
+            operation="fix_geojson"
+        )
+
+        task.setDependentLayers([])
+
+        task.taskCompleted.connect(
+            lambda: QMessageBox.information(
+                self.iface.mainWindow(),
+                "Success",
+                "GeoJSON fixed successfully"
+            )
+        )
+
+        task.taskTerminated.connect(
+            lambda: QMessageBox.critical(
+                self.iface.mainWindow(),
+                "Error",
+                str(task.exception)
+            )
+        )
+
+        QgsApplication.taskManager().addTask(task)
 
         
     def _test_connection(self, conn_data):
@@ -222,14 +215,12 @@ class Controller:
         try:
             logger.info("[Controller] Testing HDFS connection")
 
-            # crear cliente temporal
             test_client = HDFSService(
                 host=conn_data["host"],
                 port=conn_data["port"],
                 user=conn_data["user"]
             )
 
-            #prueba simple: listar raíz
             test_client.list("/")
 
             QMessageBox.information(

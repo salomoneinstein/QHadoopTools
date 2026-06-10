@@ -1,24 +1,23 @@
-﻿[general]
+[general]
 name=QHadoop Tools
 qgisMinimumVersion=3.0
-description=QGIS plugin to interact with Hadoop (HDFS) for spatial data management
-version=1.2
+description=QGIS plugin for interacting with Hadoop (HDFS) via WebHDFS, enabling spatial data workflows and GeoJSON processing
+version=2.0
 author=Salomón Einstein
-email=seramirezf@correo.udistrital.edu.co
+email=seramirezf@udistrital.edu.co
 
-about=QHadoop Tools enables interaction with Hadoop Distributed File System (HDFS) from QGIS, allowing users to upload and download files and improve JSON and GeoJSON compatibility for spatial workflows. Main features include copying files between local and HDFS, validating inputs, and fixing JSON to valid GeoJSON format.
+about=QHadoop Tools allows users to interact with the Hadoop Distributed File System (HDFS) directly from QGIS. It supports uploading and downloading files, handling distributed outputs (e.g., part-*), and converting JSON data into valid GeoJSON for spatial analysis. <br><br>The plugin was designed to support workflows based on Esri's Spatial Framework for Hadoop and includes real-time progress tracking, retry mechanisms, and background execution using QgsTask.
 
 tracker=https://github.com/salomoneinstein/QHadoopTools/issues
-repository=https://github.com/salomoneinstein/QHadoopTools.git
+repository=https://github.com/salomoneinstein/QHadoopTools
 homepage=https://github.com/salomoneinstein/QHadoopTools
 
-tags=hdfs, hadoop, geojson, json, big data, webhdfs
+tags=hdfs,hadoop,webhdfs,geojson,json,qgis,spatial,bigdata
 category=Plugins
 icon=icon.png
-
 hasProcessingProvider=no
 
-changelog=Version 1.2:Fixed UI path resolution after restructuring UI into views and dialogs; improved plugin stability.
+changelog=Version 2.0: Added real-time progress tracking for upload and download, integrated QgsTask for background execution, improved WebHDFS stability and retry mechanism, enhanced handling of distributed outputs, and introduced structured logging across modules.
 
 experimental=False
 deprecated=False

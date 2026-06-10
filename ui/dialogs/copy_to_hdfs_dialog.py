@@ -55,7 +55,6 @@ class CopyToHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnTest.clicked.connect(self.run_test)
 
         
-        
     def clear_fields(self):
         self.txtHost.clear()
         self.txtPort.setText("50070")
@@ -149,9 +148,20 @@ class CopyToHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
         if " " in remote_path:
             raise ValueError("HDFS path cannot contain spaces")
             
+        
     def run_copy(self):
-        self.validate()
-        self.execute_copy.emit(self.get_data())
+        try:
+            self.validate()
+            data = self.get_data()
+
+            self.execute_copy.emit(data)
+            self.accept() 
+
+        except ValueError as e:
+            QtWidgets.QMessageBox.warning(self, "Validation Error", str(e))
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Error", str(e))
         
         
     def run_test(self):
@@ -164,7 +174,6 @@ class CopyToHdfsDialog(QtWidgets.QDialog, FORM_CLASS):
             if not data["user"]:
                 raise ValueError("User is required")
 
-            #emitir evento
             self.test_connection.emit(data)
 
         except Exception as e:

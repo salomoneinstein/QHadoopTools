@@ -3,11 +3,11 @@ import requests
 from typing import Dict, Any
 
 from urllib.parse import urlparse, urlunparse
-from ..utils.logger import logger
+from ..utils.logger import get_logger
 
+logger = get_logger(__name__)
 
 WEBHDFS_CONTEXT_ROOT = "/webhdfs/v1"
-
 
 class WebHDFSError(Exception):
     """Custom exception for WebHDFS errors."""
@@ -71,7 +71,7 @@ class WebHDFS:
 
 
     # Upload file
-    def put_file(self, local_path: str, remote_path: str, overwrite: bool = True) -> None:
+    def put_file(self, local_path: str, remote_path: str, overwrite: bool = True, progress_callback=None) -> None:
 
         if not local_path or not remote_path:
             raise ValueError("Local and remote paths are required")
@@ -117,16 +117,24 @@ class WebHDFS:
         #enviar con Content-Length (NO chunked)
         file_size = os.path.getsize(local_path)
 
+
         with open(local_path, "rb") as f:
+
+            if progress_callback:
+                wrapped_file = self.ProgressFile(f, file_size, progress_callback)
+            else:
+                wrapped_file = f
+
             upload = self.session.put(
                 url=fixed_redirect,
-                data=f,
+                data=wrapped_file,
                 headers={
                     "Content-Type": "application/octet-stream",
                     "Content-Length": str(file_size)
                 },
                 timeout=self.timeout
             )
+
 
         self._check(upload)
 
@@ -135,14 +143,13 @@ class WebHDFS:
 
 
     # Download file
-    def get_file(self, remote_path: str, local_path: str) -> None:
+    def get_file(self, remote_path: str, local_path: str, progress_callback=None) -> None:
 
         if not remote_path or not local_path:
             raise ValueError("Remote and local paths are required")
 
         logger.info(f"[WebHDFS] GET {remote_path} → {local_path}")
 
-        #request NameNode (redirect)
         resp = self._request(
             method="GET",
             path=remote_path,
@@ -151,19 +158,13 @@ class WebHDFS:
 
         redirect = resp.headers.get("Location")
 
-        # archivo vacío
         if not redirect:
             with open(local_path, "wb"):
                 pass
             logger.info("[WebHDFS] GET completed (empty file)")
             return
 
-
-        #corregir hostname del redirect
-        from urllib.parse import urlparse, urlunparse
-
         parsed = urlparse(redirect)
-
         original_host = self.base_url.split("//")[1].split(":")[0]
 
         fixed_redirect = urlunparse((
@@ -175,13 +176,10 @@ class WebHDFS:
             parsed.fragment
         ))
 
-        # asegurar user.name
         if "user.name=" not in fixed_redirect:
             separator = "&" if "?" in fixed_redirect else "?"
             fixed_redirect = f"{fixed_redirect}{separator}user.name={self.user}"
 
-
-        #download real
         download = self.session.get(
             url=fixed_redirect,
             stream=True,
@@ -190,15 +188,36 @@ class WebHDFS:
 
         self._check(download)
 
+        total_size = int(download.headers.get("Content-Length", 0))
+        downloaded = 0
+        percent = 0
+
+        if progress_callback:
+            progress_callback(1)
+
         with open(local_path, "wb") as f:
-            for chunk in download.iter_content(1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+            for chunk in download.iter_content(64 * 1024):
+
+                if not chunk:
+                    continue
+
+                f.write(chunk)
+                downloaded += len(chunk)
+
+                if progress_callback:
+                    if total_size > 0:
+                        percent = int((downloaded / total_size) * 100)
+                    else:
+                        percent = min(99, percent + 5)
+
+                    progress_callback(percent)
+
+        if progress_callback:
+            progress_callback(100)
 
         download.close()
 
         logger.info("[WebHDFS] GET completed")
-
 
 
     # List directory

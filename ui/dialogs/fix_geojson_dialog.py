@@ -35,7 +35,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class FixGeoJsonDialog(QtWidgets.QDialog, FORM_CLASS):
 
-    execute_copy = pyqtSignal(dict)
+    execute_fix = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -47,19 +47,15 @@ class FixGeoJsonDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-
-
         self.btnClear.clicked.connect(self.clear_fields)
         self.btnFindPath.clicked.connect(self.select_input_file)
-        #execute_copy = pyqtSignal(dict)
-        #self.btnFix.clicked.connect(self.accept)
-        self.btnFix.clicked.connect(self.run_copy)
+        self.btnFix.clicked.connect(self.run_fix)
 
 
-    # UI ACTIONS
     def clear_fields(self):
         self.txtPath.clear()
 
+        
     def select_input_file(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
@@ -70,14 +66,13 @@ class FixGeoJsonDialog(QtWidgets.QDialog, FORM_CLASS):
         if file_path:
             self.txtPath.setText(file_path)
 
-    # DATA
+
     def get_data(self) -> dict:
         return {
-            "input_path": self.txtPath.text().strip()
+            "input_file": self.txtPath.text().strip()
         }
 
 
-    # VALIDATION
     def validate(self) -> None:
 
         input_path = self.txtPath.text().strip()
@@ -96,10 +91,17 @@ class FixGeoJsonDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if not input_path.lower().endswith(".json"):
             raise ValueError("Input must be a .json file")
-            
-    def run_copy(self):
-        self.validate()
-        self.execute_copy.emit(self.get_data())
+ 
+
+    def run_fix(self):
+        try:
+            self.validate()
+            self.execute_fix.emit(self.get_data())
+            self.accept() 
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Errror", str(e))
+
 
 
 
